@@ -1,9 +1,4 @@
 <!doctype html>
-<!--
- This page is shown when the extension button is clicked, because the
- "browser_action" field in manifest.json contains the "default_popup" key with
- value "popup.html".
- -->
 <html>
 <head>
     <title>TLinker suggestions Pop-up</title>
@@ -17,7 +12,7 @@
             white-space: pre;
             text-overflow: ellipsis;
             overflow: hidden;
-            max-width: 400px;
+            max-width: 600px;
         }
     </style>
 
@@ -30,7 +25,7 @@
     <script src="generate_suggestions.js"></script>
 </head>
 <body>
-    <button id='connect-botton'>Connect</button>
+    <button id='connect-button'>Connect</button>
     <button id="send-message-button">Request Suggestions</button>
     <div id="response"></div>
 </body>

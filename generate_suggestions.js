@@ -48,8 +48,8 @@ function getCurrentTabUrl(callback) {
 }
 
 var port = null;
-var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+) \1/;
-var GitHub_RE = /https?:\/\/github\.com\/(.*)\/issues\/([0-9]+) \1 \2/;
+var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+)/;
+var GitHub_RE = /https?:\/\/github\.com\/(.*)\/issues\/([0-9]+)/;
 
 var getKeys = function(obj){
     var keys = [];
@@ -74,18 +74,17 @@ function updateUiState() {
 }
 
 function sendNativeMessage() {
-    var repo_issue = null;
     getCurrentTabUrl(function(url) {
-        repo_issue = url.replace(GitHub_RE, '$1 $2').split(' ');
+        var repo_issue = url.replace(GitHub_RE, '$1 $2').split(' ');
+        var repo = repo_issue[0];
+        var issue = repo_issue[1];
+        var message = {"Repository": repo, "Issue": issue};
+        port.postMessage(message);
     });
-    var repo = repo_issue[0];
-    var issue = repo_issue[1];
-    var message = {"Repository": repo, "Issue": issue};
-    port.postMessage(message);
 }
 
 function onNativeMessage(message) {
-    displayMessage('<ul><li>' + message.items.join('</li><li>') + '</li></ul>');
+    displayMessage('<ul><li>' + message.Suggestions.join('</li><li>') + '</li></ul>');
 }
 
 function onDisconnected() {
@@ -95,6 +94,7 @@ function onDisconnected() {
 }
 
 function connect() {
+    document.getElementById('response').innerHTML = '';
     var hostName = "tlinker";
     port = chrome.runtime.connectNative(hostName);
     port.onMessage.addListener(onNativeMessage);
