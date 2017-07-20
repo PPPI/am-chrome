@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+
+  "name": "TLinker Chrome Extension",
+  "description": "This is a chrome extension that uses the TLinker backend (must be running) to predict related commits for the currently open issue. To be used on GitHub issue pages or JIRA.",
+  "version": "1.0",
+
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "pluginpage.html"
+  },
+  "permissions": [
+    "activeTab",
+    "nativeMessaging"
+  ]
+}
