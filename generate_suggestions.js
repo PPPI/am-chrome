@@ -32,7 +32,7 @@ function getCurrentTabUrl(callback) {
         // If you want to see the URL of other tabs (e.g. after removing active:true
         // from |queryInfo|), then the "tabs" permission is required to see their
         // "url" properties.
-        console.assert(typeof url == 'string', 'tab.url should be a string');
+        console.assert(typeof url === 'string', 'tab.url should be a string');
 
         callback(url);
     });
@@ -50,6 +50,7 @@ function getCurrentTabUrl(callback) {
 var port = null;
 var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+)/;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/issues\/([0-9]+)/;
+var body_html = null;
 
 var getKeys = function(obj){
     var keys = [];
@@ -75,16 +76,25 @@ function updateUiState() {
 
 function sendNativeMessage() {
     getCurrentTabUrl(function(url) {
-        var repo_issue = url.replace(GitHub_RE, '$1 $2').split(' ');
-        var repo = repo_issue[0];
-        var issue = repo_issue[1];
-        var message = {"Repository": repo, "Issue": issue};
-        port.postMessage(message);
+        if (url.match(/^https?:\/\/github\.com\/.*\/issues\/.*$/)) {
+            var repo_issue = url.replace(GitHub_RE, '$1 $2').split(' ');
+            var repo = repo_issue[0];
+            var issue = repo_issue[1];
+            var message = {"Repository": repo, "Issue": issue, "Body": body_html};
+            console.debug(message);
+            port.postMessage(message);
+        } else {
+            displayMessage('This extension only works on GitHub Issue pages, please navigate to one to use it.')
+        }
     });
 }
 
 function onNativeMessage(message) {
-    displayMessage('<ul><li>' + message.Suggestions.join('</li><li>') + '</li></ul>');
+    if (message.Suggestions.length > 0) {
+        displayMessage('<ul><li>' + message.Suggestions.join('</li><li>') + '</li></ul>');
+    } else {
+        displayMessage(message.Error)
+    }
 }
 
 function onDisconnected() {
@@ -109,3 +119,23 @@ document.addEventListener('DOMContentLoaded', function() {
         'click', sendNativeMessage);
     updateUiState();
 });
+
+chrome.runtime.onMessage.addListener(function(request, sender) {
+    if (request.action === "getSource") {
+        body_html = request.source;
+    }
+});
+
+function onWindowLoad() {
+    chrome.tabs.executeScript(null, {
+        file: "get_HTML.js"
+    }, function() {
+        // If you try and inject into an extensions page or the webstore/NTP you'll get an error
+        if (chrome.runtime.lastError) {
+            displayMessage('There was an error injecting script : \n' + chrome.runtime.lastError.message);
+        }
+    });
+
+}
+
+window.onload = onWindowLoad;
