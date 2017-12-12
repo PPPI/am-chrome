@@ -49,8 +49,7 @@ function getCurrentTabUrl(callback) {
 
 var port = null;
 var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+)/;
-var GitHub_RE = /https?:\/\/github\.com\/(.*)\/issues\/([0-9]+)/;
-var body_html = null;
+var GitHub_RE = /https?:\/\/github\.com\/(.*)\/pulls?\/([0-9]+)/;
 
 var getKeys = function(obj){
     var keys = [];
@@ -76,11 +75,11 @@ function updateUiState() {
 
 function sendNativeMessage() {
     getCurrentTabUrl(function(url) {
-        if (url.match(/^https?:\/\/github\.com\/.*\/issues\/.*$/)) {
+        if (url.match(/^https?:\/\/github\.com\/.*\/pulls?\/.*$/)) {
             var repo_issue = url.replace(GitHub_RE, '$1 $2').split(' ');
             var repo = repo_issue[0];
-            var issue = repo_issue[1];
-            var message = {"Repository": repo, "Issue": issue, "Body": body_html};
+            var pull = repo_issue[1];
+            var message = {"Repository": repo, "PR": pull};
             console.debug(message);
             port.postMessage(message);
         } else {
@@ -105,7 +104,7 @@ function onDisconnected() {
 
 function connect() {
     document.getElementById('response').innerHTML = '';
-    var hostName = "tlinker";
+    var hostName = "linker";
     port = chrome.runtime.connectNative(hostName);
     port.onMessage.addListener(onNativeMessage);
     port.onDisconnect.addListener(onDisconnected);
@@ -119,23 +118,3 @@ document.addEventListener('DOMContentLoaded', function() {
         'click', sendNativeMessage);
     updateUiState();
 });
-
-chrome.runtime.onMessage.addListener(function(request, sender) {
-    if (request.action === "getSource") {
-        body_html = request.source;
-    }
-});
-
-function onWindowLoad() {
-    chrome.tabs.executeScript(null, {
-        file: "get_HTML.js"
-    }, function() {
-        // If you try and inject into an extensions page or the webstore/NTP you'll get an error
-        if (chrome.runtime.lastError) {
-            displayMessage('There was an error injecting script : \n' + chrome.runtime.lastError.message);
-        }
-    });
-
-}
-
-window.onload = onWindowLoad;

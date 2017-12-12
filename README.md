@@ -1,2 +1,2 @@
 # tlinker-chrome
-A chrome plugin using TLinker as a backend to offer suggestions at issue closing time regarding related commits.
+A chrome plugin using A-m as a backend to offer suggestions at PR submission time regarding related issues.
