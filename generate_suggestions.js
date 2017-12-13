@@ -90,7 +90,14 @@ function sendNativeMessage() {
 
 function onNativeMessage(message) {
     if (message.Suggestions.length > 0) {
-        displayMessage('<ul><li>' + message.Suggestions.join('</li><li>') + '</li></ul>');
+        var html = '<ul>';
+        for (var i = 0; i < message.Suggestions.length; i++) {
+            var suggestion = message.Suggestions[i];
+            html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '">'
+            + suggestion.Id + ' [' + suggestion.Probability + ']</a></li>'
+        }
+        html = html + '</ul>';
+        displayMessage(html);
     } else {
         displayMessage(message.Error)
     }
