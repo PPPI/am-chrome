@@ -49,7 +49,7 @@ function getCurrentTabUrl(callback) {
 
 var port = null;
 var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+)/;
-var GitHub_RE = /https?:\/\/github\.com\/(.*)\/pulls?\/([0-9]+)/;
+var GitHub_RE = /https?:\/\/github\.com\/(.*)\/(pulls?|issues?)\/([0-9]+)/;
 var suggestion_index = 0;
 var current_suggestions = null;
 
@@ -77,15 +77,21 @@ function updateUiState() {
 
 function sendNativeMessage() {
     getCurrentTabUrl(function(url) {
-        if (url.match(/^https?:\/\/github\.com\/.*\/pulls?\/.*$/)) {
-            var repo_issue = url.replace(GitHub_RE, '$1 $2').split(' ');
+        if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
+            var repo_issue = url.replace(GitHub_RE, '$1 $2 $3').split(' ');
             var repo = repo_issue[0];
-            var pull = repo_issue[1];
-            var message = {"Repository": repo, "PR": pull};
+            var type = repo_issue[1];
+            var id = repo_issue[2];
+            var message = null;
+            if (type.match(/pulls?/)) {
+                message = {"Repository": repo, "PR": id, 'Issue': null};
+            } else {
+                message = {"Repository": repo, "PR": null, 'Issue': id};
+            }
             console.debug(message);
             port.postMessage(message);
         } else {
-            displayMessage('This extension only works on GitHub Issue pages, please navigate to one to use it.')
+            displayMessage('This extension only works on GitHub PR and Issue pages, please navigate to one to use it.')
         }
     });
 }
@@ -113,14 +119,19 @@ function displayResultsUpTo(how_many) {
     html = html + '<button id="next">Load more</button>';
     displayMessage(html);
     for (i = suggestion_index; i < limit; i++) {
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click',
+                copyToClipboard('https://www.github.com/' + current_suggestions[i].Repo
+                    + '/issues/' + current_suggestions[i].Id));
+        });
         document.getElementById('copy-' + current_suggestions[i].Id).style.display = 'block';
-        document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click',
-            copyToClipboard('https://www.github.com/' + current_suggestions[i].Repo + '/issues/' + current_suggestions[i].Id))
     }
-    suggestion_index = limit === current_suggestions.length ? 0 : limit;
+    suggestion_index = limit % current_suggestions.length;
     document.getElementById('send-message-button').style.display = 'none';
-    document.getElementById('next').style.display = 'block';
-    document.getElementById('next').addEventListener('click', displayResultsUpTo(how_many))
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('next').addEventListener('click', displayResultsUpTo(how_many));
+    });
+    document.getElementById('next').style.display = 'block'
 }
 
 
