@@ -50,6 +50,7 @@ function getCurrentTabUrl(callback) {
 var port = null;
 var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+)/;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/pulls?\/([0-9]+)/;
+var current_suggestions = null;
 
 var getKeys = function(obj){
     var keys = [];
@@ -88,37 +89,36 @@ function sendNativeMessage() {
     });
 }
 
+function copyToClipboard(text) {
+    const input = document.createElement('input');
+    input.style.position = 'fixed';
+    input.style.opacity = 0;
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('Copy');
+    document.body.removeChild(input);
+}
+
 function onNativeMessage(message) {
     if (message.Suggestions.length > 0) {
+        current_suggestions = message.Suggestions;
         var html = '<ul>';
-        for (var i = 0; i < message.Suggestions.length; i++) {
-            var suggestion = message.Suggestions[i];
+        for (var i = 0; i < current_suggestions.length; i++) {
+            var suggestion = current_suggestions[i];
             html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '">'
             + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-"' + suggestion.Id + '>Copy</button></li>'
         }
         html = html + '</ul>';
         displayMessage(html);
-        for (i = 0; i < message.Suggestions.length; i++) {
-            document.getElementById('copy-' + message.Suggestions[i].Id).style.display = 'block';
-            document.getElementById('copy-' + message.Suggestions[i].Id).addEventListener('click', function(event) {
-                // Create a dummy input to copy the url to
-                var dummy = document.createElement("input");
-                // Add it to the document
-                document.body.appendChild(dummy);
-                // Set its ID
-                dummy.setAttribute("id", "dummy_id");
-                // Output the array into it
-                document.getElementById("dummy_id").value = 'https://www.github.com/'
-                    + suggestion.Repo + '/issues/' + suggestion.Id;
-                // Select it
-                dummy.select();
-                // Copy its contents
-                document.execCommand("copy");
-                // Remove it as its not needed anymore
-                document.body.removeChild(dummy);
-            });
+        for (i = 0; i < current_suggestions.length; i++) {
+            document.getElementById('copy-' + current_suggestions[i].Id).style.display = 'block';
+            document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click',
+                copyToClipboard('https://www.github.com/' + current_suggestions[i].Repo + '/issues/' + current_suggestions[i].Id))
         }
+        document.getElementById('send-message-button').style.display = 'none';
     } else {
+        current_suggestions = null;
         displayMessage(message.Error)
     }
 }
