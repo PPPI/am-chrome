@@ -94,10 +94,30 @@ function onNativeMessage(message) {
         for (var i = 0; i < message.Suggestions.length; i++) {
             var suggestion = message.Suggestions[i];
             html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '">'
-            + suggestion.Id + ' [' + suggestion.Probability + ']</a></li>'
+            + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-"' + suggestion.Id + '>Copy</button></li>'
         }
         html = html + '</ul>';
         displayMessage(html);
+        for (i = 0; i < message.Suggestions.length; i++) {
+            document.getElementById('copy-' + message.Suggestions[i].Id).style.display = 'block';
+            document.getElementById('copy-' + message.Suggestions[i].Id).addEventListener('click', function(event) {
+                // Create a dummy input to copy the url to
+                var dummy = document.createElement("input");
+                // Add it to the document
+                document.body.appendChild(dummy);
+                // Set its ID
+                dummy.setAttribute("id", "dummy_id");
+                // Output the array into it
+                document.getElementById("dummy_id").value = 'https://www.github.com/'
+                    + suggestion.Repo + '/issues/' + suggestion.Id;
+                // Select it
+                dummy.select();
+                // Copy its contents
+                document.execCommand("copy");
+                // Remove it as its not needed anymore
+                document.body.removeChild(dummy);
+            });
+        }
     } else {
         displayMessage(message.Error)
     }
