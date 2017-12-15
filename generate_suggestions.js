@@ -50,6 +50,7 @@ function getCurrentTabUrl(callback) {
 var port = null;
 var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+)/;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/pulls?\/([0-9]+)/;
+var suggestion_index = 0;
 var current_suggestions = null;
 
 var getKeys = function(obj){
@@ -61,7 +62,7 @@ var getKeys = function(obj){
 };
 
 function displayMessage(text) {
-    document.getElementById('response').innerHTML = "<p>" + text + "</p>";
+    document.getElementById('response').innerHTML = text;
 }
 
 function updateUiState() {
@@ -100,23 +101,33 @@ function copyToClipboard(text) {
     document.body.removeChild(input);
 }
 
+function displayResultsUpTo(how_many) {
+    var html = '<ul>';
+    var limit = suggestion_index + how_many <= current_suggestions.length ? suggestion_index + how_many : current_suggestions.length;
+    for (var i = suggestion_index; i < limit; i++) {
+        var suggestion = current_suggestions[i];
+        html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '">'
+            + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-"' + suggestion.Id + '>Copy</button></li>'
+    }
+    html = html + '</ul>';
+    html = html + '<button id="next">Load more</button>';
+    displayMessage(html);
+    for (i = suggestion_index; i < limit; i++) {
+        document.getElementById('copy-' + current_suggestions[i].Id).style.display = 'block';
+        document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click',
+            copyToClipboard('https://www.github.com/' + current_suggestions[i].Repo + '/issues/' + current_suggestions[i].Id))
+    }
+    suggestion_index = limit === current_suggestions.length ? 0 : limit;
+    document.getElementById('send-message-button').style.display = 'none';
+    document.getElementById('next').style.display = 'block';
+    document.getElementById('next').addEventListener('click', displayResultsUpTo(how_many))
+}
+
+
 function onNativeMessage(message) {
     if (message.Suggestions.length > 0) {
         current_suggestions = message.Suggestions;
-        var html = '<ul>';
-        for (var i = 0; i < current_suggestions.length; i++) {
-            var suggestion = current_suggestions[i];
-            html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '">'
-            + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-"' + suggestion.Id + '>Copy</button></li>'
-        }
-        html = html + '</ul>';
-        displayMessage(html);
-        for (i = 0; i < current_suggestions.length; i++) {
-            document.getElementById('copy-' + current_suggestions[i].Id).style.display = 'block';
-            document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click',
-                copyToClipboard('https://www.github.com/' + current_suggestions[i].Repo + '/issues/' + current_suggestions[i].Id))
-        }
-        document.getElementById('send-message-button').style.display = 'none';
+        displayResultsUpTo(3)
     } else {
         current_suggestions = null;
         displayMessage(message.Error)
