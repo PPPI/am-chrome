@@ -48,18 +48,10 @@ function getCurrentTabUrl(callback) {
 }
 
 var port = null;
-var JIRA_RE = /.*\/jira\/.*\/([a-zA-Z\-0-9]+)/;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/(pulls?|issues?)\/([0-9]+)/;
-var suggestion_index = 0;
+var index = 0;
 var current_suggestions = null;
-
-var getKeys = function(obj){
-    var keys = [];
-    for(var key in obj){
-        keys.push(key);
-    }
-    return keys;
-};
+var how_many = 3;
 
 function displayMessage(text) {
     document.getElementById('response').innerHTML = text;
@@ -68,9 +60,11 @@ function displayMessage(text) {
 function updateUiState() {
     if (port) {
         document.getElementById('connect-button').style.display = 'none';
+        document.getElementById('next-button').style.display = 'none';
         document.getElementById('send-message-button').style.display = 'block';
     } else {
         document.getElementById('connect-button').style.display = 'block';
+        document.getElementById('next-button').style.display = 'none';
         document.getElementById('send-message-button').style.display = 'none';
     }
 }
@@ -107,38 +101,33 @@ function copyToClipboard(text) {
     document.body.removeChild(input);
 }
 
-function displayResultsUpTo(how_many) {
+function displayResultsUpTo(max_results_to_show) {
     var html = '<ul>';
-    var limit = suggestion_index + how_many <= current_suggestions.length ? suggestion_index + how_many : current_suggestions.length;
-    for (var i = suggestion_index; i < limit; i++) {
+    var limit = index + max_results_to_show <= current_suggestions.length ? index + max_results_to_show : current_suggestions.length;
+    for (var i = index; i < limit; i++) {
         var suggestion = current_suggestions[i];
-        html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '">'
-            + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-"' + suggestion.Id + '>Copy</button></li>'
+        html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '" target="_blank">'
+            + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-' + suggestion.Id + '">Copy</button></li>'
     }
     html = html + '</ul>';
-    html = html + '<button id="next">Load more</button>';
+    console.log(html);
     displayMessage(html);
-    for (i = suggestion_index; i < limit; i++) {
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click',
-                copyToClipboard('https://www.github.com/' + current_suggestions[i].Repo
-                    + '/issues/' + current_suggestions[i].Id));
-        });
+    console.log(current_suggestions);
+    for (i = index; i < limit; i++) {
+        var suggestion_link = 'https://www.github.com/' + current_suggestions[i].Repo + '/issues/' + current_suggestions[i].Id;
+        document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click', copyToClipboard(suggestion_link));
         document.getElementById('copy-' + current_suggestions[i].Id).style.display = 'block';
     }
-    suggestion_index = limit % current_suggestions.length;
-    document.getElementById('send-message-button').style.display = 'none';
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('next').addEventListener('click', displayResultsUpTo(how_many));
-    });
-    document.getElementById('next').style.display = 'block'
+    index = limit % current_suggestions.length;
 }
 
 
 function onNativeMessage(message) {
     if (message.Suggestions.length > 0) {
         current_suggestions = message.Suggestions;
-        displayResultsUpTo(3)
+        document.getElementById('send-message-button').style.display = 'none';
+        document.getElementById('next-button').style.display = 'block';
+        displayResultsUpTo(how_many)
     } else {
         current_suggestions = null;
         displayMessage(message.Error)
@@ -161,9 +150,8 @@ function connect() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('connect-button').addEventListener(
-        'click', connect);
-    document.getElementById('send-message-button').addEventListener(
-        'click', sendNativeMessage);
-    updateUiState();
+    document.getElementById('connect-button').addEventListener('click', connect);
+    document.getElementById('send-message-button').addEventListener('click', sendNativeMessage);
+    document.getElementById('next-button').addEventListener('click', function () {displayResultsUpTo(how_many)});
+    updateUiState()
 });
