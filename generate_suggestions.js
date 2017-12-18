@@ -102,7 +102,7 @@ function copyToClipboard(text) {
 }
 
 function displayResultsUpTo(max_results_to_show) {
-    var html = '<ul>';
+    var html = '<ul style="list-style: none;">';
     var limit = index + max_results_to_show <= current_suggestions.length ? index + max_results_to_show : current_suggestions.length;
     for (var i = index; i < limit; i++) {
         var suggestion = current_suggestions[i];
@@ -110,9 +110,7 @@ function displayResultsUpTo(max_results_to_show) {
             + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-' + suggestion.Id + '">Copy</button></li>'
     }
     html = html + '</ul>';
-    console.log(html);
     displayMessage(html);
-    console.log(current_suggestions);
     for (i = index; i < limit; i++) {
         var suggestion_link = 'https://www.github.com/' + current_suggestions[i].Repo + '/issues/' + current_suggestions[i].Id;
         document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click', copyToClipboard(suggestion_link));
@@ -126,7 +124,11 @@ function onNativeMessage(message) {
     if (message.Suggestions.length > 0) {
         current_suggestions = message.Suggestions;
         document.getElementById('send-message-button').style.display = 'none';
-        document.getElementById('next-button').style.display = 'block';
+        if (message.Suggestions.length > how_many) {
+            document.getElementById('next-button').style.display = 'block';
+        } else {
+            document.getElementById('next-button').style.display = 'none';
+        }
         displayResultsUpTo(how_many)
     } else {
         current_suggestions = null;
