@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>A-m suggestions Pop-up</title>
+    <link type="text/css" rel="stylesheet" href="../css/material.min.css">
+    <link type="text/css" rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+    <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link type="text/css" rel="stylesheet" href="../css/plugin_style.css">
+
+    <!--
+      - JavaScript and HTML must be in separate files: see our Content Security
+      - Policy documentation[1] for details and explanation.
+      -
+      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
+     -->
+    <script src="../js/popup/generate_suggestions.js"></script>
+</head>
+<body>
+    <div class="header"><a>Aide-mémoire</a></div>
+    <button class='btn' id='connect-button'>Connect</button>
+    <button class='btn' id="send-message-button">Request Suggestions</button>
+    <div class= "response" id="response"></div>
+    <div class="mdl-menu--bottom-right">
+        <button class='btn' id="record-selected-button">Record Selected Links</button>
+        <button class='btn' id="update-model-button">Force Update Model</button>
+    </div>
+</body>
+</html>

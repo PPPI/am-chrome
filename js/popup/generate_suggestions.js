@@ -49,9 +49,6 @@ function getCurrentTabUrl(callback) {
 
 var port = null;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/(pulls?|issues?)\/([0-9]+)/;
-var index = 0;
-var current_suggestions = null;
-var how_many = 3;
 
 function displayMessage(text) {
     document.getElementById('response').innerHTML = text;
@@ -60,16 +57,18 @@ function displayMessage(text) {
 function updateUiState() {
     if (port) {
         document.getElementById('connect-button').style.display = 'none';
-        document.getElementById('next-button').style.display = 'none';
         document.getElementById('send-message-button').style.display = 'block';
+        document.getElementById('record-selected-button').style.display = 'none';
+        document.getElementById('update-model-button').style.display = 'block';
     } else {
         document.getElementById('connect-button').style.display = 'block';
-        document.getElementById('next-button').style.display = 'none';
         document.getElementById('send-message-button').style.display = 'none';
+        document.getElementById('record-selected-button').style.display = 'none';
+        document.getElementById('update-model-button').style.display = 'none';
     }
 }
 
-function sendNativeMessage() {
+function sendPredictionRequest() {
     getCurrentTabUrl(function(url) {
         if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
             var repo_issue = url.replace(GitHub_RE, '$1 $2 $3').split(' ');
@@ -78,16 +77,27 @@ function sendNativeMessage() {
             var id = repo_issue[2];
             var message = null;
             if (type.match(/pulls?/)) {
-                message = {"Repository": repo, "PR": id, 'Issue': null};
+                message = {"Type": "Prediction", "Repository": repo, "PR": id, 'Issue': null, "Threshold": 0.02};
             } else {
-                message = {"Repository": repo, "PR": null, 'Issue': id};
+                message = {"Type": "Prediction", "Repository": repo, "PR": null, 'Issue': id,  "Threshold": 0.02};
             }
-            console.debug(message);
+            //console.debug(message);
             port.postMessage(message);
         } else {
+            document.getElementById('send-message-button').style.display = 'none';
             displayMessage('This extension only works on GitHub PR and Issue pages, please navigate to one to use it.')
         }
     });
+}
+
+function sendModelUpdateRequest() {
+    var message = {"Type": "Update"};
+    port.postMessage(message);
+}
+
+function sendRecordSelectedLinks() {
+    var message = {"Type": "LinkUpdate", "Repository": null, "Links": []};
+    port.postMessage(message);
 }
 
 function copyToClipboard(text) {
@@ -101,37 +111,29 @@ function copyToClipboard(text) {
     document.body.removeChild(input);
 }
 
-function displayResultsUpTo(max_results_to_show) {
-    var html = '<ul style="list-style: none;">';
-    var limit = index + max_results_to_show <= current_suggestions.length ? index + max_results_to_show : current_suggestions.length;
-    for (var i = index; i < limit; i++) {
-        var suggestion = current_suggestions[i];
-        html = html + '<li><a href="https://www.github.com/' + suggestion.Repo + '/issues/' + suggestion.Id + '" target="_blank">'
-            + suggestion.Id + ' [' + suggestion.Probability + ']</a><button id="copy-' + suggestion.Id + '">Copy</button></li>'
+function displayResults(suggestions) {
+    var html = '<table class="TableListJS" id="entries">';
+    html = html + '<thead><tr><td width="200">Title</td><td width="20px">Score</td></tr></thead><tbody>';
+    for (var i = 0; i < suggestions.length; i++) {
+        html = html + '<tr>';
+        var suggestion = suggestions[i];
+        html = html + '<td width="200px"><a href="https://www.github.com/' + suggestion.Repo + '/issues/'
+            + suggestion.Id + '" target="_blank">'
+            + suggestion.Title + '</a></td><td width="20px">' + suggestion.Probability + '</td>';
+        html = html + '</tr>';
     }
-    html = html + '</ul>';
+    html = html + '</tbody>';
     displayMessage(html);
-    for (i = index; i < limit; i++) {
-        var suggestion_link = 'https://www.github.com/' + current_suggestions[i].Repo + '/issues/' + current_suggestions[i].Id;
-        document.getElementById('copy-' + current_suggestions[i].Id).addEventListener('click', copyToClipboard(suggestion_link));
-        document.getElementById('copy-' + current_suggestions[i].Id).style.display = 'block';
-    }
-    index = limit % current_suggestions.length;
 }
 
 
 function onNativeMessage(message) {
+    document.getElementById('send-message-button').style.display = 'none';
+    document.getElementById('update-model-button').style.display = 'none';
     if (message.Suggestions.length > 0) {
-        current_suggestions = message.Suggestions;
-        document.getElementById('send-message-button').style.display = 'none';
-        if (message.Suggestions.length > how_many) {
-            document.getElementById('next-button').style.display = 'block';
-        } else {
-            document.getElementById('next-button').style.display = 'none';
-        }
-        displayResultsUpTo(how_many)
+        document.getElementById('record-selected-button').style.display = 'block';
+        displayResults(message.Suggestions)
     } else {
-        current_suggestions = null;
         displayMessage(message.Error)
     }
 }
@@ -153,7 +155,8 @@ function connect() {
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('connect-button').addEventListener('click', connect);
-    document.getElementById('send-message-button').addEventListener('click', sendNativeMessage);
-    document.getElementById('next-button').addEventListener('click', function () {displayResultsUpTo(how_many)});
+    document.getElementById('send-message-button').addEventListener('click', sendPredictionRequest);
+    document.getElementById('record-selected-button').addEventListener('click', sendRecordSelectedLinks);
+    document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
     updateUiState()
 });
