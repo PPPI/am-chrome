@@ -10,8 +10,8 @@ body {
     font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif !important; }
 
 .header {
-    background-color: #c7ac32;
-    border-top: 1px solid #ebc43f;
+    background-color: #03396c;
+    border-top: 1px solid #011f4b;
     height: 38px;
     padding: 6px;
     text-align: center; }
@@ -27,14 +27,14 @@ body {
 .btn {
     color: #ffffff;
     font-size: 12px;
-    background: #c7ac32;
+    background: #005b96;
     padding: 10px 20px 10px 20px;
     text-decoration: none;
     margin: auto;
 }
 
 .btn:hover {
-    background: #ebc43f;
+    background: #6497b1;
     text-decoration: none;
 }
 
@@ -43,11 +43,11 @@ body {
 }
 
 table {
-    background-color: #fd9;
+    background-color: #005b96;
     table-layout: fixed;
 }
 tbody {
-    background-color: #fff;
+    background-color: #b3cde0;
     height: 150px;
     width: 321px;
     font-size: 12px;
@@ -63,5 +63,5 @@ tr {
 
 thead > tr, tbody{ display:block;}
 
-#entries tr.clicked { background: #ccd; }
-#entries tr.highlight { background: #eef; }
+#entries tr.clicked { background: #03396c; }
+#entries tr.highlight { background: #6497b1; }

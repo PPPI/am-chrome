@@ -136,7 +136,7 @@ function sendPredictionRequest() {
             port.postMessage(message);
         } else {
             document.getElementById('send-message-button').style.display = 'none';
-            displayMessage('This extension only works on GitHub PR and Issue pages, please navigate to one to use it.')
+            displayMessage('This mode only works on GitHub PR and Issue pages, please navigate to one to use it.')
         }
     });
 }
@@ -221,5 +221,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('send-message-button').addEventListener('click', sendPredictionRequest);
     document.getElementById('record-selected-button').addEventListener('click', sendRecordSelectedLinks);
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
-    updateUiState()
+    //updateUiState()
+    connect();
 });
