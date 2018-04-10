@@ -47,7 +47,58 @@ function getCurrentTabUrl(callback) {
     // alert(url); // Shows "undefined", because chrome.tabs.query is async.
 }
 
+var selected = [];
+
+function tableHighlightRow() {
+    if (document.getElementById && document.createTextNode) {
+        var tables=document.getElementsByTagName('table');
+        for ( var i=0; i<tables.length; i++ ) {
+            if ( tables[i].className==='TableListJS' ) {
+                var trs=tables[i].getElementsByTagName('tr');
+                for ( var j=0; j<trs.length; j++) {
+                    if (trs[j].parentNode.nodeName==='TBODY') {
+                        trs[j].onmouseover=function(){
+                            // 'highlight' color is set in tablelist.css
+                            if ( this.className === '') {
+                                this.className='highlight';
+                            }
+                            return false
+                        }
+                        trs[j].onmouseout=function(){
+                            if ( this.className === 'highlight') {
+                                this.className='';
+                            }
+                            return false
+                        }
+                        trs[j].onmousedown=function(){
+                            //
+                            // Toggle the selected state of this row
+                            //
+
+                            // 'clicked' color is set in tablelist.css.
+                            if ( this.className !== 'clicked' ) {
+                                // Mark this row as selected
+                                this.className='clicked';
+                                selected.push(this);
+                            }
+                            else {
+                                this.className='';
+                                selected.splice(selected.indexOf(this), 1);
+                            }
+
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 var port = null;
+var repo = null;
+var type = null;
+var id = null;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/(pulls?|issues?)\/([0-9]+)/;
 
 function displayMessage(text) {
@@ -72,14 +123,14 @@ function sendPredictionRequest() {
     getCurrentTabUrl(function(url) {
         if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
             var repo_issue = url.replace(GitHub_RE, '$1 $2 $3').split(' ');
-            var repo = repo_issue[0];
-            var type = repo_issue[1];
-            var id = repo_issue[2];
+            repo = repo_issue[0];
+            type = repo_issue[1];
+            id = repo_issue[2];
             var message = null;
             if (type.match(/pulls?/)) {
-                message = {"Type": "Prediction", "Repository": repo, "PR": id, 'Issue': null, "Threshold": 0.02};
+                message = {"Type": "Prediction", "Repository": repo, "PR": id, 'Issue': null};
             } else {
-                message = {"Type": "Prediction", "Repository": repo, "PR": null, 'Issue': id,  "Threshold": 0.02};
+                message = {"Type": "Prediction", "Repository": repo, "PR": null, 'Issue': id};
             }
             //console.debug(message);
             port.postMessage(message);
@@ -96,7 +147,18 @@ function sendModelUpdateRequest() {
 }
 
 function sendRecordSelectedLinks() {
-    var message = {"Type": "LinkUpdate", "Repository": null, "Links": []};
+    links = [];
+    for (var i = 0; i < selected.length; i++){
+        other_id = selected[i].firstElementChild.firstElementChild.href.split('/');
+        other_id = other_id[other_id.length - 1];
+        if (type.match(/pulls?/)) {
+            links.push([other_id, id])
+        } else {
+            links.push([id, other_id])
+        }
+    }
+    var message = {"Type": "LinkUpdate", "Repository": repo, "Links": links};
+    console.debug(message);
     port.postMessage(message);
 }
 
@@ -124,6 +186,7 @@ function displayResults(suggestions) {
     }
     html = html + '</tbody>';
     displayMessage(html);
+    tableHighlightRow();
 }
 
 
