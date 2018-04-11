@@ -206,6 +206,8 @@ function displayResults(suggestions, threshold) {
 
 function onNativeMessage(message) {
     localStorage.setItem('last_msg', JSON.stringify(message));
+    selected = [];
+    localStorage.setItem('selected', JSON.stringify(selected));
     document.getElementById('send-message-button').style.display = 'none';
     document.getElementById('update-model-button').style.display = 'none';
     if (message.Suggestions.length > 0) {
@@ -242,7 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('record-selected-button').addEventListener('click', sendRecordSelectedLinks);
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
     document.getElementById('Threshold').oninput = function () {
-        selected = [];
         last_msg = JSON.parse(localStorage.getItem('last_msg'));
         localStorage.setItem('threshold', this.value);
         displayResults(last_msg.Suggestions, this.value/100);
