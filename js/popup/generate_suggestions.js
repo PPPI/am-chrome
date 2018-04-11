@@ -161,7 +161,7 @@ function sendModelUpdateRequest() {
 function sendRecordSelectedLinks() {
     links = [];
     for (var i = 0; i < selected.length; i++){
-        other_id = selected[i].firstElementChild.firstElementChild.href.split('/');
+        other_id = selected[i].split('/');
         other_id = other_id[other_id.length - 1];
         if (type.match(/pulls?/)) {
             links.push([other_id, id])
