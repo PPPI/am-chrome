@@ -91,7 +91,8 @@ function tableHighlightRow() {
                             return true
                         }
 
-                        if (selected.indexOf(trs[j].firstElementChild.firstElementChild.href) > -1) {
+                        if (trs[j].firstElementChild && trs[j].firstElementChild.firstElementChild &&
+                            selected.indexOf(trs[j].firstElementChild.firstElementChild.href) > -1) {
                             trs[j].className = 'clicked';
                         }
                     }
@@ -163,14 +164,16 @@ function sendRecordSelectedLinks() {
     for (var i = 0; i < selected.length; i++){
         other_id = selected[i].split('/');
         other_id = other_id[other_id.length - 1];
-        if (type.match(/pulls?/)) {
-            links.push([other_id, id])
-        } else {
-            links.push([id, other_id])
+        if (other_id !== null && id !== null) {
+            if (type.match(/pulls?/)) {
+                links.push([other_id, id])
+            } else {
+                links.push([id, other_id])
+            }
         }
     }
-    var message = {"Type": "LinkUpdate", "Repository": repo, "Links": links};
-    //console.debug(message);
+    var message = {"Type": "LinkUpdate", "Repository": repo, "Links": JSON.stringify(links)};
+    console.debug(message);
     port.postMessage(message);
 }
 
@@ -205,12 +208,12 @@ function displayResults(suggestions, threshold) {
 
 
 function onNativeMessage(message) {
-    localStorage.setItem('last_msg', JSON.stringify(message));
-    selected = [];
-    localStorage.setItem('selected', JSON.stringify(selected));
     document.getElementById('send-message-button').style.display = 'none';
     document.getElementById('update-model-button').style.display = 'none';
     if (message.Suggestions.length > 0) {
+        localStorage.setItem('last_msg', JSON.stringify(message));
+        selected = [];
+        localStorage.setItem('selected', JSON.stringify(selected));
         document.getElementById('record-selected-button').style.display = 'block';
         document.getElementById('threshold-slide-container').style.display = 'block';
         th = localStorage.getItem('threshold');
@@ -219,6 +222,8 @@ function onNativeMessage(message) {
         }
         displayResults(message.Suggestions, th/100)
     } else {
+        document.getElementById('record-selected-button').style.display = 'none';
+        document.getElementById('threshold-slide-container').style.display = 'none';
         displayMessage(message.Error)
     }
 }
@@ -252,6 +257,8 @@ document.addEventListener('DOMContentLoaded', function() {
     connect();
     getCurrentTabUrl(function(url) {
         if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
+            var message = JSON.parse(localStorage.getItem('last_msg'));
+            if (!(message && message.Suggestions.length > 0)) {return;}
             var previous_repo = localStorage.getItem('repo');
             var previous_type = localStorage.getItem('type');
             var previous_id = localStorage.getItem('id');
@@ -264,7 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('update-model-button').style.display = 'none';
                 selected = JSON.parse(localStorage.getItem('selected'));
                 if (selected === null) {selected = []}
-                var message = JSON.parse(localStorage.getItem('last_msg'));
                 document.getElementById('record-selected-button').style.display = 'block';
                 document.getElementById('threshold-slide-container').style.display = 'block';
                 th = localStorage.getItem('threshold');
