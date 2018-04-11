@@ -79,14 +79,20 @@ function tableHighlightRow() {
                             if ( this.className !== 'clicked' ) {
                                 // Mark this row as selected
                                 this.className='clicked';
-                                selected.push(this);
+                                selected.push(this.firstElementChild.firstElementChild.href);
+                                localStorage.setItem('selected', JSON.stringify(selected));
                             }
                             else {
                                 this.className='';
-                                selected.splice(selected.indexOf(this), 1);
+                                selected.splice(selected.indexOf(this.firstElementChild.firstElementChild.href), 1);
+                                localStorage.setItem('selected', JSON.stringify(selected));
                             }
 
                             return true
+                        }
+
+                        if (selected.indexOf(trs[j].firstElementChild.firstElementChild.href) > -1) {
+                            trs[j].className = 'clicked';
                         }
                     }
                 }
@@ -100,7 +106,7 @@ var repo = null;
 var type = null;
 var id = null;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/(pulls?|issues?)\/([0-9]+)/;
-var last_msg = null;
+var localStorage = window.localStorage;
 
 function displayMessage(text) {
     document.getElementById('response').innerHTML = text;
@@ -128,6 +134,10 @@ function sendPredictionRequest() {
             repo = repo_issue[0];
             type = repo_issue[1];
             id = repo_issue[2];
+            localStorage.setItem('repo', repo);
+            localStorage.setItem('type', type);
+            localStorage.setItem('id', id);
+
             var message = null;
             if (type.match(/pulls?/)) {
                 message = {"Type": "Prediction", "Repository": repo, "PR": id, 'Issue': null};
@@ -160,7 +170,7 @@ function sendRecordSelectedLinks() {
         }
     }
     var message = {"Type": "LinkUpdate", "Repository": repo, "Links": links};
-    console.debug(message);
+    //console.debug(message);
     port.postMessage(message);
 }
 
@@ -195,13 +205,16 @@ function displayResults(suggestions, threshold) {
 
 
 function onNativeMessage(message) {
-    last_msg = message;
+    localStorage.setItem('last_msg', JSON.stringify(message));
     document.getElementById('send-message-button').style.display = 'none';
     document.getElementById('update-model-button').style.display = 'none';
     if (message.Suggestions.length > 0) {
         document.getElementById('record-selected-button').style.display = 'block';
         document.getElementById('threshold-slide-container').style.display = 'block';
-        th = document.getElementById('Threshold').value;
+        th = localStorage.getItem('threshold');
+        if (th !== null) {document.getElementById('Threshold').value = th;} else {
+            th = document.getElementById('Threshold').value;
+        }
         displayResults(message.Suggestions, th/100)
     } else {
         displayMessage(message.Error)
@@ -230,8 +243,35 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
     document.getElementById('Threshold').oninput = function () {
         selected = [];
+        last_msg = JSON.parse(localStorage.getItem('last_msg'));
+        localStorage.setItem('threshold', this.value);
         displayResults(last_msg.Suggestions, this.value/100);
     };
     //updateUiState()
     connect();
+    getCurrentTabUrl(function(url) {
+        if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
+            var previous_repo = localStorage.getItem('repo');
+            var previous_type = localStorage.getItem('type');
+            var previous_id = localStorage.getItem('id');
+            var repo_issue = url.replace(GitHub_RE, '$1 $2 $3').split(' ');
+            repo = repo_issue[0];
+            type = repo_issue[1];
+            id = repo_issue[2];
+            if (repo === previous_repo && previous_type === type && previous_id === id) {
+                //document.getElementById('send-message-button').style.display = 'none';
+                document.getElementById('update-model-button').style.display = 'none';
+                selected = JSON.parse(localStorage.getItem('selected'));
+                if (selected === null) {selected = []}
+                var message = JSON.parse(localStorage.getItem('last_msg'));
+                document.getElementById('record-selected-button').style.display = 'block';
+                document.getElementById('threshold-slide-container').style.display = 'block';
+                th = localStorage.getItem('threshold');
+                if (th !== null) {document.getElementById('Threshold').value = th;} else {
+                    th = document.getElementById('Threshold').value;
+                }
+                displayResults(message.Suggestions, th / 100);
+            }
+        }
+    })
 });
