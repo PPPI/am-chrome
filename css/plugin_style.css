@@ -5,7 +5,7 @@ html {
     height: 0; }
 
 body {
-    width: 321px;
+    width: 350px;
     padding: 0;
     font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif !important; }
 
@@ -47,21 +47,61 @@ table {
     table-layout: fixed;
 }
 tbody {
-    background-color: #b3cde0;
-    height: 150px;
-    width: 321px;
-    font-size: 12px;
-    overflow: auto;
+    background-color: #eeeeee;
+    height: 200px;
+    width: 350px;
+    font-size: 16px;
+    overflow-y: auto;
+    overflow-x: unset;
 }
 td {
     padding: 3px 10px;
 }
 
 tr {
-    width: 290px;
+    width: 310px;
 }
 
 thead > tr, tbody{ display:block;}
 
-#entries tr.clicked { background: #03396c; }
-#entries tr.highlight { background: #6497b1; }
+#entries tr.clicked { background: #ddde00; }
+#entries tr.highlight { background: #f4fcd2; }
+
+.slidecontainer {
+    width: 99%; /* Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 99%; /* Full-width */
+    height: 10px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 10px; /* Set a specific slider handle width */
+    height: 10px; /* Slider handle height */
+    background: #03396c; /* BLue background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+    width: 10px; /* Set a specific slider handle width */
+    height: 10px; /* Slider handle height */
+    background: #03396c; /* Blue background */
+    cursor: pointer; /* Cursor on hover */
+}

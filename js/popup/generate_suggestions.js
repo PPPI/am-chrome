@@ -100,12 +100,14 @@ var repo = null;
 var type = null;
 var id = null;
 var GitHub_RE = /https?:\/\/github\.com\/(.*)\/(pulls?|issues?)\/([0-9]+)/;
+var last_msg = null;
 
 function displayMessage(text) {
     document.getElementById('response').innerHTML = text;
 }
 
 function updateUiState() {
+    document.getElementById('threshold-slide-container').style.display = 'none';
     if (port) {
         document.getElementById('connect-button').style.display = 'none';
         document.getElementById('send-message-button').style.display = 'block';
@@ -173,15 +175,17 @@ function copyToClipboard(text) {
     document.body.removeChild(input);
 }
 
-function displayResults(suggestions) {
+function displayResults(suggestions, threshold) {
     var html = '<table class="TableListJS" id="entries">';
-    html = html + '<thead><tr><td width="200">Title</td><td width="20px">Score</td></tr></thead><tbody>';
+    html = html + '<thead><tr><td width="350px">Title</td></tr></thead><tbody>';
     for (var i = 0; i < suggestions.length; i++) {
         html = html + '<tr>';
         var suggestion = suggestions[i];
-        html = html + '<td width="200px"><a href="https://www.github.com/' + suggestion.Repo + '/issues/'
-            + suggestion.Id + '" target="_blank">'
-            + suggestion.Title + '</a></td><td width="20px">' + suggestion.Probability + '</td>';
+        if (suggestion.Probability >= threshold) {
+            html = html + '<td width="350px"><a href="https://www.github.com/' + suggestion.Repo + '/issues/'
+                + suggestion.Id + '" target="_blank">'
+                + suggestion.Title + '</a></td>';//'<td width="30px">' + suggestion.Probability + '</td>';
+        }
         html = html + '</tr>';
     }
     html = html + '</tbody>';
@@ -191,11 +195,14 @@ function displayResults(suggestions) {
 
 
 function onNativeMessage(message) {
+    last_msg = message;
     document.getElementById('send-message-button').style.display = 'none';
     document.getElementById('update-model-button').style.display = 'none';
     if (message.Suggestions.length > 0) {
         document.getElementById('record-selected-button').style.display = 'block';
-        displayResults(message.Suggestions)
+        document.getElementById('threshold-slide-container').style.display = 'block';
+        th = document.getElementById('Threshold').value;
+        displayResults(message.Suggestions, th/100)
     } else {
         displayMessage(message.Error)
     }
@@ -221,6 +228,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('send-message-button').addEventListener('click', sendPredictionRequest);
     document.getElementById('record-selected-button').addEventListener('click', sendRecordSelectedLinks);
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
+    document.getElementById('Threshold').oninput = function () {
+        selected = [];
+        displayResults(last_msg.Suggestions, this.value/100);
+    };
     //updateUiState()
     connect();
 });
