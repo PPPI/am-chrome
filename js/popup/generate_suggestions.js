@@ -135,6 +135,7 @@ function sendPredictionRequest() {
             repo = repo_issue[0];
             type = repo_issue[1];
             id = repo_issue[2];
+            localStorage.removeItem('last_msg');
             localStorage.setItem('repo', repo);
             localStorage.setItem('type', type);
             localStorage.setItem('id', id);
