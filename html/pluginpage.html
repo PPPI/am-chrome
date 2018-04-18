@@ -17,16 +17,27 @@
     <script src="../js/popup/generate_suggestions.js"></script>
 </head>
 <body>
+    <!-- Use any element to open the sidenav -->
+    <span style="font-size:35px;cursor:pointer;z-index:0;position:absolute;top:10px;" class="openbtn" id="openbtn">&#9776;</span>
     <div class="header"><a>Aide-mémoire</a></div>
-    <button class='btn' id='connect-button'>Connect</button>
-    <button class='btn' id="send-message-button">Request Suggestions</button>
-    <div class="slidecontainer" id="threshold-slide-container">
-        <input type="range" min="1" max="100" value="10" class="slider" id="Threshold">
+    <div id="mySidenav" class="sidenav">
+        <a class="closebtn" id="closebtn">&times;</a>
+        <!--<a href="#">About</a>-->
+        <a href="#" id="update-confirm">Update</a>
+        <a href="#" id="record-selected-button">Record Selected Links</a>
     </div>
-    <div class= "response" id="response"></div>
-    <div class="mdl-menu--bottom-right">
-        <button class='btn' id="record-selected-button">Record Selected Links</button>
-        <button class='btn' id="update-model-button">Force Update All Models</button>
+    <div id="main">
+        <button class='btn' id='connect-button'>Connect</button>
+        <div class= "response" id="response"></div>
+        <div class="slidecontainer" id="threshold-slide-container">
+            <input type="range" min="1" class="slider" id="Threshold">
+        </div>
     </div>
+    <dialog style="z-index:2" id="myDialog">
+        <p>Are you sure you want to update all models in the backend?
+            This will take a long time and the plugin will be unusable until the update is done!</p>
+        <button id="update-model-button" class="btn">Yes</button>
+        <button id="update-model-dismiss" class="btn">No</button>
+    </dialog>
 </body>
 </html>

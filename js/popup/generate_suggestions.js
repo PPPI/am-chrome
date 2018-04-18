@@ -117,24 +117,14 @@ function updateUiState() {
     document.getElementById('threshold-slide-container').style.display = 'none';
     if (port) {
         document.getElementById('connect-button').style.display = 'none';
-        document.getElementById('send-message-button').style.display = 'block';
         document.getElementById('record-selected-button').style.display = 'none';
-        document.getElementById('update-model-button').style.display = 'block';
     } else {
         document.getElementById('connect-button').style.display = 'block';
-        document.getElementById('send-message-button').style.display = 'none';
         document.getElementById('record-selected-button').style.display = 'none';
-        document.getElementById('update-model-button').style.display = 'none';
     }
 }
 
 function sendPredictionRequest() {
-    getCurrentTabUrl(function(url) {
-        if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
-            var repo_issue = url.replace(GitHub_RE, '$1 $2 $3').split(' ');
-            repo = repo_issue[0];
-            type = repo_issue[1];
-            id = repo_issue[2];
             localStorage.removeItem('last_msg');
             localStorage.setItem('repo', repo);
             localStorage.setItem('type', type);
@@ -146,18 +136,27 @@ function sendPredictionRequest() {
             } else {
                 message = {"Type": "Prediction", "Repository": repo, "PR": null, 'Issue': id};
             }
-            //console.debug(message);
             port.postMessage(message);
-        } else {
-            document.getElementById('send-message-button').style.display = 'none';
-            displayMessage('This mode only works on GitHub PR and Issue pages, please navigate to one to use it.')
-        }
-    });
 }
 
 function sendModelUpdateRequest() {
     var message = {"Type": "Update"};
     port.postMessage(message);
+    document.getElementById('myDialog').close();
+    closeNav();
+}
+
+function getMaxThreshold(previous_repo) {
+    var previous_max = localStorage.getItem('maxTh');
+    if (previous_repo === repo && previous_max){
+        document.getElementById('Threshold').max = previous_max;
+        if (!(document.getElementById('Threshold').value)) {
+            document.getElementById('Threshold').value = Math.ceil(previous_max / 2)
+        }
+    } else {
+        var message = {"Type": "Threshold", "Repository": repo};
+        port.postMessage(message);
+    }
 }
 
 function sendRecordSelectedLinks() {
@@ -176,6 +175,7 @@ function sendRecordSelectedLinks() {
     var message = {"Type": "LinkUpdate", "Repository": repo, "Links": JSON.stringify(links)};
     console.debug(message);
     port.postMessage(message);
+    closeNav();
 }
 
 function copyToClipboard(text) {
@@ -209,23 +209,32 @@ function displayResults(suggestions, threshold) {
 
 
 function onNativeMessage(message) {
-    document.getElementById('send-message-button').style.display = 'none';
-    document.getElementById('update-model-button').style.display = 'none';
-    if (message.Suggestions.length > 0) {
-        localStorage.setItem('last_msg', JSON.stringify(message));
-        selected = [];
-        localStorage.setItem('selected', JSON.stringify(selected));
-        document.getElementById('record-selected-button').style.display = 'block';
-        document.getElementById('threshold-slide-container').style.display = 'block';
-        th = localStorage.getItem('threshold');
-        if (th !== null) {document.getElementById('Threshold').value = th;} else {
-            th = document.getElementById('Threshold').value;
+    if (message.hasOwnProperty('Threshold')) {
+        var max = Math.ceil(message.Threshold * 100 * 2);
+        localStorage.setItem('maxTh', max.toString());
+        document.getElementById('Threshold').max = max;
+        if (!(document.getElementById('Threshold').value)) {
+            document.getElementById('Threshold').value = Math.ceil(message.Threshold)
         }
-        displayResults(message.Suggestions, th/100)
     } else {
-        document.getElementById('record-selected-button').style.display = 'none';
-        document.getElementById('threshold-slide-container').style.display = 'none';
-        displayMessage(message.Error)
+        localStorage.setItem('last_msg', JSON.stringify(message));
+        if (message.Suggestions.length > 0) {
+            selected = [];
+            localStorage.setItem('selected', JSON.stringify(selected));
+            document.getElementById('record-selected-button').style.display = 'block';
+            document.getElementById('threshold-slide-container').style.display = 'block';
+            th = localStorage.getItem('threshold');
+            if (th !== null) {
+                document.getElementById('Threshold').value = th;
+            } else {
+                th = document.getElementById('Threshold').value;
+            }
+            displayResults(message.Suggestions, th / 100)
+        } else {
+            document.getElementById('record-selected-button').style.display = 'none';
+            document.getElementById('threshold-slide-container').style.display = 'none';
+            displayMessage(message.Error)
+        }
     }
 }
 
@@ -244,22 +253,38 @@ function connect() {
     updateUiState();
 }
 
+/* Set the width of the side navigation to 250px and the left margin of the page content to 250px */
+function openNav() {
+    document.getElementById("mySidenav").style.width = "350px";
+    document.getElementById("main").style.marginLeft = "350px";
+}
+
+/* Set the width of the side navigation to 0 and the left margin of the page content to 0 */
+function closeNav() {
+    document.getElementById("mySidenav").style.width = "0";
+    document.getElementById("main").style.marginLeft = "0";
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('connect-button').addEventListener('click', connect);
-    document.getElementById('send-message-button').addEventListener('click', sendPredictionRequest);
     document.getElementById('record-selected-button').addEventListener('click', sendRecordSelectedLinks);
+    document.getElementById('openbtn').addEventListener('click', openNav);
+    document.getElementById('closebtn').href = "#";
+    document.getElementById('closebtn').addEventListener('click', closeNav);
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
+    document.getElementById('update-confirm').addEventListener('click', function () {document.getElementById('myDialog').showModal()});
+    document.getElementById('update-model-dismiss').addEventListener('click', function () {document.getElementById('myDialog').close()});
     document.getElementById('Threshold').oninput = function () {
         last_msg = JSON.parse(localStorage.getItem('last_msg'));
         localStorage.setItem('threshold', this.value);
         displayResults(last_msg.Suggestions, this.value/100);
     };
-    //updateUiState()
     connect();
     getCurrentTabUrl(function(url) {
         if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
-            var message = JSON.parse(localStorage.getItem('last_msg'));
-            if (!(message && message.Suggestions.length > 0)) {return;}
+            var msg_str = localStorage.getItem('last_msg');
+            var message = null;
+            if (msg_str != null) {message = JSON.parse(msg_str);}
             var previous_repo = localStorage.getItem('repo');
             var previous_type = localStorage.getItem('type');
             var previous_id = localStorage.getItem('id');
@@ -267,9 +292,20 @@ document.addEventListener('DOMContentLoaded', function() {
             repo = repo_issue[0];
             type = repo_issue[1];
             id = repo_issue[2];
+            console.debug(message);
+            getMaxThreshold(previous_repo);
+            console.debug(message);
             if (repo === previous_repo && previous_type === type && previous_id === id) {
-                //document.getElementById('send-message-button').style.display = 'none';
-                document.getElementById('update-model-button').style.display = 'none';
+                if (message == null) {return}
+                else {
+                        if ((message.Suggestions.length === 0) && (message.Error.includes('No suggestions available'))) {
+                            displayMessage(message.Error);
+                            return;
+                        } else {if ((message.Suggestions.length === 0) && !message.Error.includes('No suggestions available')) {
+                            sendPredictionRequest();
+                            return;
+                        }}
+                }
                 selected = JSON.parse(localStorage.getItem('selected'));
                 if (selected === null) {selected = []}
                 document.getElementById('record-selected-button').style.display = 'block';
@@ -279,7 +315,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     th = document.getElementById('Threshold').value;
                 }
                 displayResults(message.Suggestions, th / 100);
+            } else {;
+                sendPredictionRequest()
             }
+        } else {
+            displayMessage('This mode only works on GitHub PR and Issue pages, please navigate to one to use it.')
         }
     })
 });
