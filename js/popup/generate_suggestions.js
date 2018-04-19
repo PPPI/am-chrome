@@ -142,7 +142,7 @@ function sendPredictionRequest() {
 function sendModelUpdateRequest() {
     var message = {"Type": "Update"};
     port.postMessage(message);
-    document.getElementById('myDialog').close();
+    document.getElementById('modelUpdateWarningDialog').close();
     closeNav();
 }
 
@@ -272,8 +272,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closebtn').href = "#";
     document.getElementById('closebtn').addEventListener('click', closeNav);
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
-    document.getElementById('update-confirm').addEventListener('click', function () {document.getElementById('myDialog').showModal()});
-    document.getElementById('update-model-dismiss').addEventListener('click', function () {document.getElementById('myDialog').close()});
+    document.getElementById('update-confirm').addEventListener('click', function () {document.getElementById('modelUpdateWarningDialog').showModal()});
+    document.getElementById('update-model-dismiss').addEventListener('click', function () {document.getElementById('modelUpdateWarningDialog').close()});
     document.getElementById('Threshold').oninput = function () {
         last_msg = JSON.parse(localStorage.getItem('last_msg'));
         localStorage.setItem('threshold', this.value);
