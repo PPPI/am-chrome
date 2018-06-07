@@ -197,15 +197,22 @@ function copyToClipboard(text) {
 function displayResults(suggestions, threshold) {
     var html = '<table class="TableListJS" id="entries">';
     html = html + '<thead><tr><td width="350px">Title</td></tr></thead><tbody>';
-    for (var i = 0; i < suggestions.length; i++) {
+    displayable = suggestions.filter(s => s.Probability >= threshold);
+    if (displayable.length === 0) {
+        document.getElementById('record-selected-button').style.display = 'none';
         html = html + '<tr>';
-        var suggestion = suggestions[i];
-        if (suggestion.Probability >= threshold) {
+        html = html + '<td width="350px">No suggestions available above the current threshold</td>';
+        html = html + '</tr>';
+    } else {
+        document.getElementById('record-selected-button').style.display = 'block';
+        for (var i = 0; i < displayable.length; i++) {
+            html = html + '<tr>';
+            var suggestion = displayable[i];
             html = html + '<td width="350px"><a href="https://www.github.com/' + suggestion.Repo + '/issues/'
                 + suggestion.Id + '" target="_blank">'
                 + suggestion.Title + '</a></td>';//'<td width="30px">' + suggestion.Probability + '</td>';
+            html = html + '</tr>';
         }
-        html = html + '</tr>';
     }
     html = html + '</tbody>';
     displayMessage(html);
@@ -222,7 +229,8 @@ function onNativeMessage(message) {
     } else {
         if (message.Suggestions.length > 0) {
             localStorage.setItem('last_msg', JSON.stringify(message));
-            selected = [];            localStorage.setItem('selected', JSON.stringify(selected));
+            selected = [];
+            localStorage.setItem('selected', JSON.stringify(selected));
             document.getElementById('record-selected-button').style.display = 'block';
             document.getElementById('threshold-slide-container').style.display = 'block';
             th = localStorage.getItem('threshold');
@@ -233,8 +241,8 @@ function onNativeMessage(message) {
             }
             displayResults(message.Suggestions, th / 100)
         } else {
-            document.getElementById('record-selected-button').style.display = 'none';
-            document.getElementById('threshold-slide-container').style.display = 'none';
+            // document.getElementById('record-selected-button').style.display = 'none';
+            // document.getElementById('threshold-slide-container').style.display = 'none';
             displayErrorMessage(message.Error)
         }
     }
@@ -274,9 +282,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closebtn').href = "#";
     document.getElementById('closebtn').addEventListener('click', closeNav);
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
-    document.getElementById('update-confirm').addEventListener('click', function () {document.getElementById('modelUpdateWarningDialog').showModal()});
-    document.getElementById('update-model-dismiss').addEventListener('click', function () {document.getElementById('modelUpdateWarningDialog').close()});
-    document.getElementById('links-recorded-button').addEventListener('click', function () {document.getElementById('LinksRecordedConfirmation').close()});
+    document.getElementById('update-confirm').addEventListener('click',
+        function () {document.getElementById('modelUpdateWarningDialog').showModal()});
+    document.getElementById('update-model-dismiss').addEventListener('click',
+        function () {document.getElementById('modelUpdateWarningDialog').close()});
+    document.getElementById('links-recorded-button').addEventListener('click',
+        function () {document.getElementById('LinksRecordedConfirmation').close()});
     document.getElementById('Threshold').oninput = function () {
         last_msg = JSON.parse(localStorage.getItem('last_msg'));
         localStorage.setItem('threshold', this.value);
@@ -318,8 +329,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     th = document.getElementById('Threshold').value;
                 }
                 displayResults(message.Suggestions, th / 100);
-            } else {;
-                sendPredictionRequest()
+            } else {
+                sendPredictionRequest();
             }
         } else {
             displayMessage('This mode only works on GitHub PR and Issue pages, please navigate to one to use it.')
