@@ -113,6 +113,11 @@ function displayMessage(text) {
     document.getElementById('response').innerHTML = text;
 }
 
+function displayErrorMessage(text) {
+    document.getElementById('error_response').innerHTML = text;
+    document.getElementById('LinksRecordedConfirmation').showModal()
+}
+
 function updateUiState() {
     document.getElementById('threshold-slide-container').style.display = 'none';
     if (port) {
@@ -210,17 +215,14 @@ function displayResults(suggestions, threshold) {
 
 function onNativeMessage(message) {
     if (message.hasOwnProperty('Threshold')) {
-        var max = Math.ceil(message.Threshold * 100 * 2);
+        var max = Math.min(Math.ceil(message.Threshold * 100 * 2), 100);
         localStorage.setItem('maxTh', max.toString());
         document.getElementById('Threshold').max = max;
-        if (!(document.getElementById('Threshold').value)) {
-            document.getElementById('Threshold').value = Math.ceil(message.Threshold)
-        }
+        document.getElementById('Threshold').value = Math.ceil(message.Threshold * 100)
     } else {
-        localStorage.setItem('last_msg', JSON.stringify(message));
         if (message.Suggestions.length > 0) {
-            selected = [];
-            localStorage.setItem('selected', JSON.stringify(selected));
+            localStorage.setItem('last_msg', JSON.stringify(message));
+            selected = [];            localStorage.setItem('selected', JSON.stringify(selected));
             document.getElementById('record-selected-button').style.display = 'block';
             document.getElementById('threshold-slide-container').style.display = 'block';
             th = localStorage.getItem('threshold');
@@ -233,7 +235,7 @@ function onNativeMessage(message) {
         } else {
             document.getElementById('record-selected-button').style.display = 'none';
             document.getElementById('threshold-slide-container').style.display = 'none';
-            displayMessage(message.Error)
+            displayErrorMessage(message.Error)
         }
     }
 }
@@ -274,6 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('update-model-button').addEventListener('click', sendModelUpdateRequest);
     document.getElementById('update-confirm').addEventListener('click', function () {document.getElementById('modelUpdateWarningDialog').showModal()});
     document.getElementById('update-model-dismiss').addEventListener('click', function () {document.getElementById('modelUpdateWarningDialog').close()});
+    document.getElementById('links-recorded-button').addEventListener('click', function () {document.getElementById('LinksRecordedConfirmation').close()});
     document.getElementById('Threshold').oninput = function () {
         last_msg = JSON.parse(localStorage.getItem('last_msg'));
         localStorage.setItem('threshold', this.value);
@@ -299,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (message == null) {return}
                 else {
                         if ((message.Suggestions.length === 0) && (message.Error.includes('No suggestions available'))) {
-                            displayMessage(message.Error);
+                            displayErrorMessage(message.Error);
                             return;
                         } else {if ((message.Suggestions.length === 0) && !message.Error.includes('No suggestions available')) {
                             sendPredictionRequest();
