@@ -294,6 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         displayResults(last_msg.Suggestions, this.value/100);
     };
     connect();
+    displayMessage('<div class="loader"></div>');
     getCurrentTabUrl(function(url) {
         if (url.match(/^https?:\/\/github\.com\/.*\/(pulls?|issues?)\/.*$/)) {
             var msg_str = localStorage.getItem('last_msg');
