@@ -113,7 +113,7 @@ function displayMessage(text) {
     document.getElementById('response').innerHTML = text;
 }
 
-function displayErrorMessage(text) {
+function displayNotificationMessage(text) {
     document.getElementById('error_response').innerHTML = text;
     document.getElementById('LinksRecordedConfirmation').showModal()
 }
@@ -241,9 +241,16 @@ function onNativeMessage(message) {
             }
             displayResults(message.Suggestions, th / 100)
         } else {
-            // document.getElementById('record-selected-button').style.display = 'none';
-            // document.getElementById('threshold-slide-container').style.display = 'none';
-            displayErrorMessage(message.Error)
+            if (message.hasOwnProperty('Error')) {
+                document.getElementById('record-selected-button').style.display = 'none';
+                document.getElementById('threshold-slide-container').style.display = 'none';
+                displayMessage(message.Error)
+            } else {
+                if (message.Notification.includes('No suggestions available')) {
+                    localStorage.setItem('last_msg', JSON.stringify(message));
+                }
+                displayNotificationMessage(message.Notification);
+            }
         }
     }
 }
@@ -307,19 +314,18 @@ document.addEventListener('DOMContentLoaded', function() {
             repo = repo_issue[0];
             type = repo_issue[1];
             id = repo_issue[2];
-            console.debug(message);
             getMaxThreshold(previous_repo);
-            console.debug(message);
-            if (repo === previous_repo && previous_type === type && previous_id === id) {
-                if (message == null) {return}
-                else {
-                        if ((message.Suggestions.length === 0) && (message.Error.includes('No suggestions available'))) {
-                            displayErrorMessage(message.Error);
-                            return;
-                        } else {if ((message.Suggestions.length === 0) && !message.Error.includes('No suggestions available')) {
-                            sendPredictionRequest();
-                            return;
-                        }}
+            if (repo === previous_repo && previous_type === type && previous_id === id && message !== null) {
+                if ((message.Suggestions.length === 0) && (message.hasOwnProperty("Notification")) &&
+                    (message.Notification.includes('No suggestions available'))) {
+                    displayNotificationMessage(message.Notification);
+                    return;
+                } else {
+                    if ((message.Suggestions.length === 0) && !((message.hasOwnProperty("Notification"))
+                        && message.Notification.includes('No suggestions available'))) {
+                        sendPredictionRequest();
+                        return;
+                    }
                 }
                 selected = JSON.parse(localStorage.getItem('selected'));
                 if (selected === null) {selected = []}
