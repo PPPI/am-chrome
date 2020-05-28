@@ -1,4 +1,4 @@
-# tlinker-chrome
+# am-chrome
 A chrome plugin using [A-m](https://github.com/PPPI/a-m) as a backend to offer suggestions at PR submission time regarding related issues.
 
 You can download any release from this repository and load it via Chrome's chrome://extensions page, but you should remember to get the backend as well from [here](https://github.com/PPPI/a-m). The relevant chrome entry point is [here](https://github.com/PPPI/a-m/tree/master/chrome_entry).
